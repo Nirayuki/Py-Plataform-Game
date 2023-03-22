@@ -12,6 +12,10 @@ FPS = 60
 JUMP_FORCE = 10
 GRAVITY_FORCE = 10
 IS_COLLISION = False
+SCORE = 0
+
+VEL = 10
+
 
 CHOICE_OBSTACULO = choice([0, 1])
 
@@ -36,6 +40,29 @@ SPRITE_SHEET = pygame.image.load(os.path.join(img_dir, 'dinoSpritesheet.png'))
 
 SOUND_COLLISION = pygame.mixer.Sound(os.path.join(sound_dir, 'sons_death_sound.wav'))
 SOUND_COLLISION.set_volume(1)
+
+SOUND_SCORE = pygame.mixer.Sound(os.path.join(sound_dir, 'sons_score_sound.wav'))
+SOUND_SCORE.set_volume(0.5)
+
+# Funções ----------------------------------------------------------------
+
+def show_message(msg, length, color):
+    font = pygame.font.SysFont('comicsanssms', length, True, False)
+    message = f'{msg}'
+    text = font.render(message, True, color)
+    return text
+
+
+def reload_game():
+    global SCORE, VEL, IS_COLLISION, CHOICE_OBSTACULO
+    SCORE = 0
+    VEL = 10
+    IS_COLLISION = False
+    dino.rect.y = SCREEN_HEIGTH - 64 - 96//2
+    dino.pulo = False
+    fly_dino.rect.x = SCREEN_WIDTH
+    cacto.rect.x = SCREEN_WIDTH
+    CHOICE_OBSTACULO = choice([0, 1])
 
 # Class ----------------------------------------------------------------
 
@@ -111,7 +138,7 @@ class Clouds(pygame.sprite.Sprite):
             self.rect.x = SCREEN_WIDTH
             self.rect.y = randrange(50, 200, 50)
         # Movimentando 10px para esquerda
-        self.rect.x -= 10
+        self.rect.x -= VEL
 
 class Ground(pygame.sprite.Sprite):
     def __init__(self, position_x):
@@ -159,7 +186,7 @@ class Cacto(pygame.sprite.Sprite):
             if self.rect.topright[0] < 0:
                 self.rect.x = SCREEN_WIDTH
             # Movimentando 10px para esquerda
-            self.rect.x -= 10
+            self.rect.x -= VEL
 
 class Fly_Dino(pygame.sprite.Sprite):
     def __init__(self):
@@ -196,7 +223,7 @@ class Fly_Dino(pygame.sprite.Sprite):
             self.image = self.img_dino[int(self.index)]
             if self.rect.topright[0] < 0:
                 self.rect.x = SCREEN_WIDTH
-            self.rect.x -= 10
+            self.rect.x -= VEL
 # Main ----------------------------------------------------------------
 
 
@@ -243,11 +270,13 @@ while run:
         if event.type == pygame.QUIT:
             run = False
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
+            if event.key == pygame.K_SPACE  and IS_COLLISION == False:
                 if dino.rect.y != dino.postition_y_initial:
                     pass
                 else:
                     dino.pular()
+            if event.key == pygame.K_r and IS_COLLISION == True:
+                reload_game()
 
     # Criando colisão com o dino e os obstaculos
     collision = pygame.sprite.spritecollide(dino, obstaculos, False, pygame.sprite.collide_mask) # Adicionando a Flag, tipo de colisão, no meu caso escolhi o mask, mas existe o Rect e Radious
@@ -265,10 +294,26 @@ while run:
     if collision and IS_COLLISION == False:
         SOUND_COLLISION.play()
         IS_COLLISION = True
+
+
     if IS_COLLISION == True:
-        pass
+        if SCORE % 100 == 0:
+            SCORE += 1
+        text_game_over = show_message('Press R to realod the Game', 40, (0, 0, 0))
+        SCREEN.blit(text_game_over, (SCREEN_WIDTH//4, SCREEN_HEIGTH//2))
     else:
+        SCORE += 0.5
         all_sprites.update()
+        text_score = show_message(int(SCORE), 40, (0, 0, 0))
+
+        if SCORE % 100 == 0:
+            SOUND_SCORE.play()
+            if VEL >= 23:
+                VEL += 0
+            else:
+                VEL += 0.5
+
+    SCREEN.blit(text_score, (520, 30))
    
         
     pygame.display.flip() # update display
